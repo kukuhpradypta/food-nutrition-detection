@@ -50,6 +50,6 @@ echo Server will run at http://localhost:8000
 echo WebSocket at ws://localhost:8000/ws/predict
 echo Press Ctrl+C to stop
 echo.
-python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 
 pause

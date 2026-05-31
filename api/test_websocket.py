@@ -13,7 +13,7 @@ import websockets
 
 
 async def test_realtime():
-    uri = "ws://localhost:8000/ws/predict"
+    uri = "ws://localhost:8000/predict/ws"
 
     async with websockets.connect(uri) as ws:
         print("Connected to WebSocket server")

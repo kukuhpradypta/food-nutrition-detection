@@ -30,3 +30,9 @@ This dataset provides annotated pictures of food plates along with **calories**,
 ## Source
 
 This data was taken from Google Research's dataset [Nutrition5k](https://github.com/google-research-datasets/Nutrition5k). It's cleaned up and filtered, because this dataset had many issues such as missing images or missing calorie information for certain samples. That's why this dataset is a bit smaller than 5k samples.
+
+## Run Migration
+alembic upgrade head
+
+## Rollback Migration
+alembic downgrade base

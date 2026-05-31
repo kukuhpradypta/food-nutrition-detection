@@ -19,6 +19,32 @@ def generate_token() -> str:
     """Generate a unique session token."""
     return str(uuid.uuid4())
 
+def validate_user_session(db: Session, data: dict):
+    """Validate user session."""
+
+    user = (
+        db.query(User)
+        .filter(
+            User.username == data["username"],
+            User.session_token == data["session_token"]
+        )
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid user session"
+        )
+
+    return {
+        "status": 200,
+        "message": "Token valid",
+        "data": {
+            "username": user.username,
+            "session_token": user.session_token
+        }
+    }
 
 def register_user(db: Session, data: dict) -> User:
     """Register a new user."""

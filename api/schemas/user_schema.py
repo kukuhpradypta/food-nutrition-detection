@@ -37,6 +37,10 @@ class UserRegisterRequest(BaseModel):
     age: int
     health_goal: HealthGoalEnum
     activity_level: ActivityLevelEnum
+    
+class ValidateSessionRequest(BaseModel):
+    username: str
+    session_token: str
 
 
 class UserLoginRequest(BaseModel):

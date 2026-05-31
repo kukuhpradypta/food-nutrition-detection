@@ -11,8 +11,9 @@ from api.schemas.user_schema import (
     UserUpdateRequest,
     UserResponse,
     LoginResponse,
+    ValidateSessionRequest,
 )
-from api.controllers.user_controller import register_user, login_user, get_user_by_id, update_user, logout_user
+from api.controllers.user_controller import register_user, login_user, get_user_by_id, update_user, logout_user, validate_user_session
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -69,3 +70,15 @@ def logout(user_id: int, db: Session = Depends(get_db)):
     """Logout user — clear session token."""
     logout_user(db, user_id)
     return {"message": "Logout berhasil"}
+
+@router.post("/validateSession")
+def validate_session(data: ValidateSessionRequest, db: Session = Depends(get_db)):
+    """
+    Register a new user.
+
+    Data yang dibutuhkan:
+    - username
+    - session_token
+    """
+    user = validate_user_session(db, data.model_dump())
+    return user

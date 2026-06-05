@@ -111,11 +111,11 @@ def update_user(db: Session, user_id: int, data: dict) -> User:
     return user
 
 
-def logout_user(db: Session, user_id: int) -> None:
+def logout_user(db: Session, session_token: str) -> None:
     """Clear session token (logout)."""
-    user = db.query(User).filter(User.id == user_id, User.deleted_at.is_(None)).first()
+    user = db.query(User).filter(User.session_token == session_token, User.deleted_at.is_(None)).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+        raise HTTPException(status_code=404, detail="Session tidak ditemukan")
 
     user.session_token = None
     db.commit()

@@ -3,7 +3,7 @@ User request/response schemas.
 """
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Optional, Any
 
 from pydantic import BaseModel
 
@@ -27,6 +27,14 @@ class ActivityLevelEnum(str, Enum):
     atlet = "atlet"
 
 
+# ── Base API response wrapper ──────────────────────────────────────────────────
+class ApiResponse(BaseModel):
+    status: int
+    message: str
+    data: Optional[Any] = None
+
+
+# ── User schemas ───────────────────────────────────────────────────────────────
 class UserRegisterRequest(BaseModel):
     name: str
     username: str
@@ -37,10 +45,6 @@ class UserRegisterRequest(BaseModel):
     age: int
     health_goal: HealthGoalEnum
     activity_level: ActivityLevelEnum
-    
-class ValidateSessionRequest(BaseModel):
-    username: str
-    session_token: str
 
 
 class UserLoginRequest(BaseModel):
@@ -64,8 +68,7 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
-class LoginResponse(BaseModel):
-    message: str
+class LoginData(BaseModel):
     session_token: str
     user: UserResponse
 
@@ -79,3 +82,12 @@ class UserUpdateRequest(BaseModel):
     age: Optional[int] = None
     health_goal: Optional[HealthGoalEnum] = None
     activity_level: Optional[ActivityLevelEnum] = None
+
+
+class ValidateSessionRequest(BaseModel):
+    username: str
+    session_token: str
+
+
+class LogoutRequest(BaseModel):
+    session_token: str

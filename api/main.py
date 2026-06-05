@@ -4,18 +4,17 @@ FastAPI server with MVC structure for food nutrition prediction.
 Endpoints:
     GET  /              → Status check
     GET  /health        → Model health check
-    GET  /docs          → Swagger UI
-    GET  /scalar        → Scalar API docs
+    GET  /docs          → Scalar API docs
     POST /predict/      → Single image prediction
-    GET  /predict/history → Prediction history
     WS   /predict/ws    → Real-time WebSocket prediction
 
 Usage:
     uvicorn api.main:app --host 0.0.0.0 --port 8000
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.exceptions import RequestValidationError
 
 from api.database import Base
 from api.models import User  # noqa: F401 - register models
@@ -37,6 +36,33 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ============ Global Exception Handlers ============
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"status": exc.status_code, "message": exc.detail, "data": None},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = [f"{' -> '.join(str(l) for l in e['loc'])}: {e['msg']}" for e in exc.errors()]
+    return JSONResponse(
+        status_code=422,
+        content={"status": 422, "message": "Validasi gagal", "data": errors},
+    )
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"status": 500, "message": f"Server error: {str(exc)}", "data": None},
+    )
+
 
 # ============ Register Routes ============
 app.include_router(prediction_router)

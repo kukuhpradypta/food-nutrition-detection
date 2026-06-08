@@ -94,7 +94,7 @@ def on_startup():
 def root():
     return {
         "status": "ok",
-        "message": "Food Nutrition API v3 - MVC + Scalar",
+        "message": "Food Nutrition API Scalar",
         "docs": "/docs",
     }
 

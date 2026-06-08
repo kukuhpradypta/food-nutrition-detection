@@ -18,6 +18,7 @@ class GoalCategoryEnum(str, Enum):
 class HealthGoalResponse(BaseModel):
     id: int
     goal_category: GoalCategoryEnum
+    gender: Optional[str] = None
     nutrition: Any
     user_id: Optional[int] = None
     created_at: datetime

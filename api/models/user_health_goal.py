@@ -20,11 +20,17 @@ class GoalCategory(str, enum.Enum):
     custom = "custom"
 
 
+class GoalGender(str, enum.Enum):
+    male = "male"
+    female = "female"
+
+
 class UserHealthGoal(Base):
     __tablename__ = "user_health_goals"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     goal_category = Column(SAEnum(GoalCategory), nullable=False, index=True)
+    gender = Column(SAEnum(GoalGender), nullable=True)
     nutrition = Column(JSON, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)

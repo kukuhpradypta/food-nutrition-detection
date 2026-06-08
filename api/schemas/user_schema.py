@@ -9,8 +9,8 @@ from pydantic import BaseModel
 
 
 class GenderEnum(str, Enum):
-    pria = "pria"
-    wanita = "wanita"
+    male = "male"
+    female = "female"
 
 
 class HealthGoalEnum(str, Enum):

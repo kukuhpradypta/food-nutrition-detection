@@ -4,16 +4,17 @@ Health goal controller - business logic.
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from api.models.user import User
 from api.models.user_health_goal import UserHealthGoal, GoalCategory
 from api.schemas.health_goal_schema import HealthGoalResponse
 
 
-def get_health_goal(db: Session, category: str, user_id: int):
+def get_health_goal(db: Session, category: str, current_user: User):
     """
     Get health goal by category.
 
     - For global categories (lose_weight, gain_muscle, maintain_health):
-      return the global goal (user_id IS NULL).
+      return the global goal matching the user's gender (user_id IS NULL).
     - For custom: return the goal belonging to the current user.
     """
     if category not in [c.value for c in GoalCategory]:
@@ -28,9 +29,14 @@ def get_health_goal(db: Session, category: str, user_id: int):
     )
 
     if category == GoalCategory.custom.value:
-        query = query.filter(UserHealthGoal.user_id == user_id)
+        query = query.filter(UserHealthGoal.user_id == current_user.id)
     else:
-        query = query.filter(UserHealthGoal.user_id.is_(None))
+        # Global goal, filtered by the user's gender
+        gender = current_user.gender.value if hasattr(current_user.gender, "value") else current_user.gender
+        query = query.filter(
+            UserHealthGoal.user_id.is_(None),
+            UserHealthGoal.gender == gender,
+        )
 
     goal = query.first()
     if not goal:

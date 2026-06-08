@@ -37,7 +37,4 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_index("ix_daily_nutritions_date", table_name="daily_nutritions")
-    op.drop_index("ix_daily_nutritions_user_id", table_name="daily_nutritions")
-    op.drop_index("ix_daily_nutritions_id", table_name="daily_nutritions")
     op.drop_table("daily_nutritions")

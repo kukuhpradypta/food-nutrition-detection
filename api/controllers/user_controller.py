@@ -82,6 +82,7 @@ def register_user(db: Session, data: dict) -> User:
     if data["health_goal"] == "custom":
         custom_goal = UserHealthGoal(
             goal_category=GoalCategory.custom.value,
+            gender=data["gender"],
             nutrition=data["nutrition"],
             user_id=user.id,
         )

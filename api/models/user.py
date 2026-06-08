@@ -10,8 +10,8 @@ from api.database import Base
 
 
 class Gender(str, enum.Enum):
-    pria = "pria"
-    wanita = "wanita"
+    male = "male"
+    female = "female"
 
 
 class HealthGoal(str, enum.Enum):

@@ -27,7 +27,7 @@ def get_goal(
 
     Header: Authorization: Bearer <session_token>
     """
-    data = get_health_goal(db, category, current_user.id)
+    data = get_health_goal(db, category, current_user)
     return ApiResponse(
         status=200,
         message="Health goal retrieved successfully",

@@ -21,7 +21,7 @@ def upgrade():
         sa.Column("name", sa.String(100), nullable=False),
         sa.Column("username", sa.String(50), nullable=False),
         sa.Column("password", sa.String(255), nullable=False),
-        sa.Column("gender", sa.Enum("pria", "wanita", name="gender"), nullable=False),
+        sa.Column("gender", sa.Enum("male", "female", name="gender"), nullable=False),
         sa.Column("height_cm", sa.Float(), nullable=False),
         sa.Column("weight_kg", sa.Float(), nullable=False),
         sa.Column("age", sa.Integer(), nullable=False),
@@ -45,6 +45,4 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_index("ix_users_username", table_name="users")
-    op.drop_index("ix_users_id", table_name="users")
     op.drop_table("users")

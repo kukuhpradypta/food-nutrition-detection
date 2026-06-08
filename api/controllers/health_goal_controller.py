@@ -9,19 +9,15 @@ from api.models.user_health_goal import UserHealthGoal, GoalCategory
 from api.schemas.health_goal_schema import HealthGoalResponse
 
 
-def get_health_goal(db: Session, category: str, current_user: User):
+def get_health_goal(db: Session, current_user: User):
     """
-    Get health goal by category.
+    Get the health goal for the current logged-in user, based on the user's
+    own `health_goal` setting.
 
-    - For global categories (lose_weight, gain_muscle, maintain_health):
-      return the global goal matching the user's gender (user_id IS NULL).
-    - For custom: return the goal belonging to the current user.
+    - If the user's goal is 'custom': return their personal custom goal.
+    - Otherwise: return the global goal matching the user's gender.
     """
-    if category not in [c.value for c in GoalCategory]:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid category. Must be: lose_weight, gain_muscle, maintain_health, custom",
-        )
+    category = current_user.health_goal.value if hasattr(current_user.health_goal, "value") else current_user.health_goal
 
     query = db.query(UserHealthGoal).filter(
         UserHealthGoal.goal_category == category,

@@ -15,19 +15,17 @@ router = APIRouter(prefix="/health-goals", tags=["Health Goals"])
 
 @router.get("/", response_model=ApiResponse)
 def get_goal(
-    category: str = Query(..., description="lose_weight | gain_muscle | maintain_health | custom"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Get health goal by category.
-
-    - Global categories return shared global nutrition targets.
-    - `custom` returns the nutrition target belonging to the logged-in user.
+    Get the health goal for the logged-in user, based on the user's own
+    `health_goal` setting (custom returns the user's personal goal,
+    otherwise the global goal matching the user's gender).
 
     Header: Authorization: Bearer <session_token>
     """
-    data = get_health_goal(db, category, current_user)
+    data = get_health_goal(db, current_user)
     return ApiResponse(
         status=200,
         message="Health goal retrieved successfully",

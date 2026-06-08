@@ -6,6 +6,8 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from api.database import get_db
+from api.dependencies import get_current_user
+from api.models.user import User
 from api.schemas.user_schema import (
     UserRegisterRequest,
     UserLoginRequest,
@@ -14,12 +16,10 @@ from api.schemas.user_schema import (
     LoginData,
     ApiResponse,
     ValidateSessionRequest,
-    LogoutRequest,
 )
 from api.controllers.user_controller import (
     register_user,
     login_user,
-    get_user_by_id,
     update_user,
     logout_user,
     validate_user_session,
@@ -36,7 +36,7 @@ def register(data: UserRegisterRequest, db: Session = Depends(get_db)):
         status_code=201,
         content=ApiResponse(
             status=201,
-            message="Registrasi berhasil",
+            message="Registration successful",
             data=UserResponse.model_validate(user).model_dump(mode="json"),
         ).model_dump(),
     )
@@ -52,7 +52,7 @@ def login(data: UserLoginRequest, db: Session = Depends(get_db)):
     )
     return ApiResponse(
         status=200,
-        message="Login berhasil",
+        message="Login successful",
         data=login_data.model_dump(mode="json"),
     )
 
@@ -60,9 +60,9 @@ def login(data: UserLoginRequest, db: Session = Depends(get_db)):
 @router.post("/validateSession", response_model=ApiResponse)
 def validate_session(data: ValidateSessionRequest, db: Session = Depends(get_db)):
     """
-    Validasi session token user.
+    Validate user session token.
 
-    Data yang dibutuhkan:
+    Required fields:
     - username
     - session_token
     """
@@ -74,34 +74,53 @@ def validate_session(data: ValidateSessionRequest, db: Session = Depends(get_db)
     )
 
 
-@router.get("/{user_id}", response_model=ApiResponse)
-def get_profile(user_id: int, db: Session = Depends(get_db)):
-    """Get user profile by ID."""
-    user = get_user_by_id(db, user_id)
+@router.get("/me", response_model=ApiResponse)
+def get_profile(current_user: User = Depends(get_current_user)):
+    """
+    Get current logged-in user profile.
+
+    Header: Authorization: Bearer <session_token>
+    """
     return ApiResponse(
         status=200,
-        message="Data user berhasil diambil",
-        data=UserResponse.model_validate(user).model_dump(mode="json"),
+        message="User data retrieved successfully",
+        data=UserResponse.model_validate(current_user).model_dump(mode="json"),
     )
 
 
-@router.put("/{user_id}", response_model=ApiResponse)
-def edit_profile(user_id: int, data: UserUpdateRequest, db: Session = Depends(get_db)):
-    """Edit user profile. Semua field optional."""
-    user = update_user(db, user_id, data.model_dump(exclude_unset=True))
+@router.put("/me", response_model=ApiResponse)
+def edit_profile(
+    data: UserUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Edit current logged-in user profile.
+
+    Header: Authorization: Bearer <session_token>
+    All fields are optional — send only fields you want to update.
+    """
+    user = update_user(db, current_user.id, data.model_dump(exclude_unset=True))
     return ApiResponse(
         status=200,
-        message="Profil berhasil diperbarui",
+        message="Profile updated successfully",
         data=UserResponse.model_validate(user).model_dump(mode="json"),
     )
 
 
 @router.post("/logout", response_model=ApiResponse)
-def logout(data: LogoutRequest, db: Session = Depends(get_db)):
-    """Logout user — clear session token."""
-    logout_user(db, data.session_token)
+def logout(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Logout user — clear session token.
+
+    Header: Authorization: Bearer <session_token>
+    """
+    logout_user(db, current_user)
     return ApiResponse(
         status=200,
-        message="Logout berhasil",
+        message="Logout successful",
         data=None,
     )

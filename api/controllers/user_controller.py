@@ -39,7 +39,7 @@ def validate_user_session(db: Session, data: dict):
 
     return {
         "status": 200,
-        "message": "Token valid",
+        "message": "Token is valid",
         "data": {
             "username": user.username,
             "session_token": user.session_token
@@ -51,7 +51,7 @@ def register_user(db: Session, data: dict) -> User:
     # Check if username already exists
     existing = db.query(User).filter(User.username == data["username"]).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Username sudah terdaftar")
+        raise HTTPException(status_code=400, detail="Username already taken")
 
     user = User(
         name=data["name"],
@@ -74,10 +74,10 @@ def login_user(db: Session, username: str, password: str) -> User:
     """Authenticate user by username and password."""
     user = db.query(User).filter(User.username == username, User.deleted_at.is_(None)).first()
     if not user:
-        raise HTTPException(status_code=401, detail="Username atau password salah")
+        raise HTTPException(status_code=401, detail="Invalid username or password")
 
     if user.password != hash_password(password):
-        raise HTTPException(status_code=401, detail="Username atau password salah")
+        raise HTTPException(status_code=401, detail="Invalid username or password")
 
     # Generate session token
     user.session_token = generate_token()
@@ -90,7 +90,7 @@ def get_user_by_id(db: Session, user_id: int) -> User:
     """Get user by ID."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+        raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
@@ -98,7 +98,7 @@ def update_user(db: Session, user_id: int, data: dict) -> User:
     """Update user profile."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+        raise HTTPException(status_code=404, detail="User not found")
 
     for key, value in data.items():
         if value is not None:
@@ -111,11 +111,7 @@ def update_user(db: Session, user_id: int, data: dict) -> User:
     return user
 
 
-def logout_user(db: Session, session_token: str) -> None:
+def logout_user(db: Session, user: User) -> None:
     """Clear session token (logout)."""
-    user = db.query(User).filter(User.session_token == session_token, User.deleted_at.is_(None)).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Session tidak ditemukan")
-
     user.session_token = None
     db.commit()

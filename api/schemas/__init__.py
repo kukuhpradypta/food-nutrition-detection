@@ -6,5 +6,4 @@ from api.schemas.user_schema import (
     LoginData,
     ApiResponse,
     ValidateSessionRequest,
-    LogoutRequest,
 )

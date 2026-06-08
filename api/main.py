@@ -110,10 +110,20 @@ def scalar_docs():
         <meta name="viewport" content="width=device-width, initial-scale=1" />
     </head>
     <body>
-        <script
-            id="api-reference"
-            data-url="/openapi.json"
-        ></script>
+        <script id="api-reference" data-url="/openapi.json"></script>
+        <script>
+            var configuration = {
+                authentication: {
+                    preferredSecurityScheme: "HTTPBearer",
+                    http: {
+                        bearer: {
+                            token: ""
+                        }
+                    }
+                }
+            }
+            document.getElementById('api-reference').dataset.configuration = JSON.stringify(configuration)
+        </script>
         <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
     </body>
     </html>

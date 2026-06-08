@@ -11,22 +11,20 @@ from PIL import Image
 from pydantic import BaseModel
 
 from api.services.model_service import get_model_service
-
-
-class NutritionResponse(BaseModel):
-    calories: float
-    fat_g: float
-    carb_g: float
-    protein_g: float
+from api.services.yolo_service import get_yolo_service
+from api.schemas.user_schema import ApiResponse
 
 
 router = APIRouter(prefix="/predict", tags=["Prediction"])
 
 
-@router.post("/", response_model=NutritionResponse)
+@router.post("/", response_model=ApiResponse)
 async def predict(file: UploadFile = File(...)):
     """
     Single image prediction via REST.
+
+    1. Validates image contains food using YOLO
+    2. If food detected, runs nutrition prediction model
 
     Upload a food image and get nutrition prediction (calories, fat, carbs, protein).
     """
@@ -35,9 +33,27 @@ async def predict(file: UploadFile = File(...)):
     try:
         contents = await file.read()
         image = Image.open(io.BytesIO(contents)).convert("RGB")
+
+        # Step 1: Validate with YOLO
+        yolo_service = get_yolo_service()
+        is_food, detected = yolo_service.is_food(image)
+
+        if not is_food:
+            return ApiResponse(
+                status=422,
+                message="Failed: object isn't food",
+                data={"detected_objects": detected},
+            )
+
+        # Step 2: Run nutrition prediction
         model_service = get_model_service()
         result = model_service.predict(image)
-        return NutritionResponse(**result)
+
+        return ApiResponse(
+            status=200,
+            message="Prediction successful",
+            data=result,
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
@@ -50,7 +66,7 @@ async def websocket_predict(websocket: WebSocket):
     Protocol:
     - Client connects to ws://server:8000/predict/ws
     - Client sends frame as base64 encoded JPEG/PNG string
-    - Server responds with JSON nutrition prediction
+    - Server responds with JSON nutrition prediction or error if not food
     """
     await websocket.accept()
     print("WebSocket client connected")
@@ -63,14 +79,37 @@ async def websocket_predict(websocket: WebSocket):
             try:
                 image_bytes = base64.b64decode(data)
                 image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+
+                # Step 1: Validate with YOLO
+                yolo_service = get_yolo_service()
+                is_food, detected = yolo_service.is_food(image)
+
+                if not is_food:
+                    await websocket.send_text(json.dumps({
+                        "status": 422,
+                        "message": "Failed: object isn't food",
+                        "data": {"detected_objects": detected},
+                    }))
+                    continue
+
+                # Step 2: Run nutrition prediction
                 model_service = get_model_service()
                 result = model_service.predict(image)
                 elapsed_ms = (time.time() - start_time) * 1000
                 result["processing_ms"] = round(elapsed_ms, 1)
-                await websocket.send_text(json.dumps(result))
+
+                await websocket.send_text(json.dumps({
+                    "status": 200,
+                    "message": "Prediction successful",
+                    "data": result,
+                }))
+
             except Exception as e:
-                error_msg = json.dumps({"error": str(e)})
-                await websocket.send_text(error_msg)
+                await websocket.send_text(json.dumps({
+                    "status": 500,
+                    "message": f"Prediction failed: {str(e)}",
+                    "data": None,
+                }))
 
     except WebSocketDisconnect:
         print("WebSocket client disconnected")

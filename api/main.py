@@ -22,6 +22,7 @@ from api.database import Base
 from api.models import User, DailyNutrition  # noqa: F401 - register models
 from api.routes import prediction_router, user_router, daily_nutrition_router
 from api.services.model_service import get_model_service
+from api.services.yolo_service import get_yolo_service
 
 # ============ App Setup ============
 app = FastAPI(
@@ -80,7 +81,10 @@ app.mount("/public", StaticFiles(directory=PUBLIC_DIR), name="public")
 # ============ Startup ============
 @app.on_event("startup")
 def on_startup():
-    # Load ML model
+    # Load YOLO food validator
+    yolo_service = get_yolo_service()
+    yolo_service.load()
+    # Load nutrition ML model
     model_service = get_model_service()
     model_service.load()
 

@@ -180,3 +180,15 @@ def logout_user(db: Session, user: User) -> None:
     """Clear session token (logout)."""
     user.session_token = None
     db.commit()
+
+
+def change_password(db: Session, user: User, old_password: str, new_password: str) -> None:
+    """Change user password after validating the old password."""
+    if user.password != hash_password(old_password):
+        raise HTTPException(status_code=400, detail="Old password is incorrect")
+
+    if old_password == new_password:
+        raise HTTPException(status_code=400, detail="New password must be different from old password")
+
+    user.password = hash_password(new_password)
+    db.commit()

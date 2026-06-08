@@ -16,6 +16,7 @@ from api.schemas.user_schema import (
     LoginData,
     ApiResponse,
     ValidateSessionRequest,
+    ChangePasswordRequest,
 )
 from api.controllers.user_controller import (
     register_user,
@@ -23,6 +24,7 @@ from api.controllers.user_controller import (
     update_user,
     logout_user,
     validate_user_session,
+    change_password,
 )
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -122,5 +124,26 @@ def logout(
     return ApiResponse(
         status=200,
         message="Logout successful",
+        data=None,
+    )
+
+
+@router.put("/me/password", response_model=ApiResponse)
+def change_user_password(
+    data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Change password for the logged-in user.
+
+    Requires the correct old password.
+
+    Header: Authorization: Bearer <session_token>
+    """
+    change_password(db, current_user, data.old_password, data.new_password)
+    return ApiResponse(
+        status=200,
+        message="Password changed successfully",
         data=None,
     )

@@ -99,5 +99,17 @@ class ValidateSessionRequest(BaseModel):
     session_token: str
 
 
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=1)
+
+    @field_validator("old_password", "new_password")
+    @classmethod
+    def not_blank_pwd(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("must not be empty")
+        return v
+
+
 class LogoutRequest(BaseModel):
     session_token: str

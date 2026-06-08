@@ -31,8 +31,65 @@ This dataset provides annotated pictures of food plates along with **calories**,
 
 This data was taken from Google Research's dataset [Nutrition5k](https://github.com/google-research-datasets/Nutrition5k). It's cleaned up and filtered, because this dataset had many issues such as missing images or missing calorie information for certain samples. That's why this dataset is a bit smaller than 5k samples.
 
-## Run Migration
-alembic upgrade head
+---
 
-## Rollback Migration
+# Cara Menjalankan Aplikasi
+
+## Prasyarat
+
+- Python 3.12+
+- MySQL (jalan di `localhost:3366`, atau sesuaikan di `.env`)
+- Database `vitality` sudah dibuat:
+  ```sql
+  CREATE DATABASE vitality;
+  ```
+
+## 1. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+## 2. Konfigurasi Environment
+
+Buat file `.env` di root project, isi koneksi database:
+
+```
+DATABASE_URL=mysql+pymysql://{username}:{password}@{host}:{port}/{db_name}
+```
+
+Sesuaikan `username`, `password`, dan port dengan setup MySQL kamu.
+
+## 3. Jalankan Migration
+
+Buat semua tabel database:
+
+```bash
+alembic upgrade head
+```
+
+Untuk rollback (menghapus semua tabel):
+
+```bash
 alembic downgrade base
+```
+
+## 4. Jalankan Server
+
+```bash
+uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Atau lewat script (Windows):
+
+```bash
+run.bat
+```
+
+## 5. Akses Aplikasi
+
+- **API Docs (Scalar):** http://localhost:8000/docs
+- **Health check:** http://localhost:8000/health
+- **Static files (gambar):** http://localhost:8000/public/...
+
+Server siap menerima request. Gunakan halaman docs untuk mencoba endpoint.

@@ -14,17 +14,17 @@ class GenderEnum(str, Enum):
 
 
 class HealthGoalEnum(str, Enum):
-    turunkan_berat_badan = "turunkan_berat_badan"
-    tambah_masa_otot = "tambah_masa_otot"
-    menjaga_kesehatan = "menjaga_kesehatan"
+    lose_weight = "lose_weight"
+    gain_muscle = "gain_muscle"
+    maintain_health = "maintain_health"
 
 
 class ActivityLevelEnum(str, Enum):
-    sangat_jarang = "sangat_jarang"
-    ringan = "ringan"
-    sedang = "sedang"
-    berat = "berat"
-    atlet = "atlet"
+    sedentary = "sedentary"
+    light = "light"
+    moderate = "moderate"
+    active = "active"
+    very_active = "athlete"
 
 
 # ── Base API response wrapper ──────────────────────────────────────────────────

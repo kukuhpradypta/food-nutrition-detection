@@ -27,12 +27,12 @@ def upgrade():
         sa.Column("age", sa.Integer(), nullable=False),
         sa.Column(
             "health_goal",
-            sa.Enum("turunkan_berat_badan", "tambah_masa_otot", "menjaga_kesehatan", name="healthgoal"),
+            sa.Enum("lose_weight", "gain_muscle", "maintain_health", name="healthgoal"),
             nullable=False,
         ),
         sa.Column(
             "activity_level",
-            sa.Enum("sangat_jarang", "ringan", "sedang", "berat", "atlet", name="activitylevel"),
+            sa.Enum("sedentary", "light", "moderate", "active", "athlete", name="activitylevel"),
             nullable=False,
         ),
         sa.Column("session_token", sa.String(255), nullable=True),

@@ -15,10 +15,12 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
+import os
 
 from api.database import Base
-from api.models import User  # noqa: F401 - register models
-from api.routes import prediction_router, user_router
+from api.models import User, DailyNutrition  # noqa: F401 - register models
+from api.routes import prediction_router, user_router, daily_nutrition_router
 from api.services.model_service import get_model_service
 
 # ============ App Setup ============
@@ -67,6 +69,12 @@ async def generic_exception_handler(request: Request, exc: Exception):
 # ============ Register Routes ============
 app.include_router(prediction_router)
 app.include_router(user_router)
+app.include_router(daily_nutrition_router)
+
+# ============ Static Files ============
+PUBLIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public")
+os.makedirs(PUBLIC_DIR, exist_ok=True)
+app.mount("/public", StaticFiles(directory=PUBLIC_DIR), name="public")
 
 
 # ============ Startup ============

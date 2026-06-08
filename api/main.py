@@ -52,10 +52,15 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    errors = [f"{' -> '.join(str(l) for l in e['loc'])}: {e['msg']}" for e in exc.errors()]
+    errors = []
+    for e in exc.errors():
+        loc = e["loc"]
+        # Take the last element as field name, skip "body"/"query" prefixes
+        field = str(loc[-1]) if loc else "field"
+        errors.append(f"{field}: cant be null")
     return JSONResponse(
         status_code=422,
-        content={"status": 422, "message": "Validasi gagal", "data": errors},
+        content={"status": 422, "message": "Validation failed", "data": errors},
     )
 
 

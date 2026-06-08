@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 
 class GenderEnum(str, Enum):
@@ -37,16 +37,23 @@ class ApiResponse(BaseModel):
 
 # ── User schemas ───────────────────────────────────────────────────────────────
 class UserRegisterRequest(BaseModel):
-    name: str
-    username: str
-    password: str
+    name: str = Field(..., min_length=1)
+    username: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=1)
     gender: GenderEnum
-    height_cm: float
-    weight_kg: float
-    age: int
+    height_cm: float = Field(..., gt=0)
+    weight_kg: float = Field(..., gt=0)
+    age: int = Field(..., gt=0)
     health_goal: HealthGoalEnum
     activity_level: ActivityLevelEnum
     nutrition: Optional[Any] = None  # required only when health_goal == "custom"
+
+    @field_validator("name", "username", "password")
+    @classmethod
+    def not_blank(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("must not be empty")
+        return v
 
 
 class UserLoginRequest(BaseModel):
@@ -84,6 +91,7 @@ class UserUpdateRequest(BaseModel):
     age: Optional[int] = None
     health_goal: Optional[HealthGoalEnum] = None
     activity_level: Optional[ActivityLevelEnum] = None
+    nutrition: Optional[Any] = None  # required only when changing health_goal to "custom"
 
 
 class ValidateSessionRequest(BaseModel):

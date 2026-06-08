@@ -43,3 +43,26 @@ def get_health_goal(db: Session, category: str, current_user: User):
         raise HTTPException(status_code=404, detail="Health goal not found")
 
     return HealthGoalResponse.model_validate(goal).model_dump(mode="json")
+
+
+def list_global_goals_by_gender(db: Session, gender: str):
+    """
+    List all global health goals (user_id IS NULL) for a given gender,
+    excluding the 'custom' category.
+    """
+    valid_genders = ["male", "female"]
+    if gender not in valid_genders:
+        raise HTTPException(status_code=400, detail="Invalid gender. Must be: male, female")
+
+    goals = (
+        db.query(UserHealthGoal)
+        .filter(
+            UserHealthGoal.user_id.is_(None),
+            UserHealthGoal.gender == gender,
+            UserHealthGoal.goal_category != GoalCategory.custom.value,
+            UserHealthGoal.deleted_at.is_(None),
+        )
+        .all()
+    )
+
+    return [HealthGoalResponse.model_validate(g).model_dump(mode="json") for g in goals]

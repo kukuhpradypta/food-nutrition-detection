@@ -122,7 +122,50 @@ def update_user(db: Session, user_id: int, data: dict) -> User:
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    # Determine the resulting health_goal after this update
+    new_health_goal = data.get("health_goal", None)
+    nutrition = data.get("nutrition", None)
+    resulting_goal = new_health_goal if new_health_goal is not None else (
+        user.health_goal.value if hasattr(user.health_goal, "value") else user.health_goal
+    )
+
+    # If the resulting goal is custom, nutrition handling is required
+    if resulting_goal == "custom":
+        existing_custom = (
+            db.query(UserHealthGoal)
+            .filter(
+                UserHealthGoal.user_id == user.id,
+                UserHealthGoal.goal_category == GoalCategory.custom.value,
+                UserHealthGoal.deleted_at.is_(None),
+            )
+            .first()
+        )
+
+        if existing_custom:
+            # Already had a custom goal — update it only if new nutrition provided
+            if nutrition is not None:
+                if not isinstance(nutrition, dict):
+                    raise HTTPException(status_code=400, detail="Field 'nutrition' must be a JSON object")
+                existing_custom.nutrition = nutrition
+        else:
+            # Switching to custom for the first time — nutrition is required
+            if not nutrition or not isinstance(nutrition, dict):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Field 'nutrition' (JSON object) is required when health_goal is 'custom'",
+                )
+            new_custom = UserHealthGoal(
+                goal_category=GoalCategory.custom.value,
+                gender=(data.get("gender") or (user.gender.value if hasattr(user.gender, "value") else user.gender)),
+                nutrition=nutrition,
+                user_id=user.id,
+            )
+            db.add(new_custom)
+
+    # Apply scalar field updates to the user (skip nutrition, it's not a user column)
     for key, value in data.items():
+        if key == "nutrition":
+            continue
         if value is not None:
             if key == "password":
                 value = hash_password(value)

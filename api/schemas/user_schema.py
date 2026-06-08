@@ -17,6 +17,7 @@ class HealthGoalEnum(str, Enum):
     lose_weight = "lose_weight"
     gain_muscle = "gain_muscle"
     maintain_health = "maintain_health"
+    custom = "custom"
 
 
 class ActivityLevelEnum(str, Enum):
@@ -45,6 +46,7 @@ class UserRegisterRequest(BaseModel):
     age: int
     health_goal: HealthGoalEnum
     activity_level: ActivityLevelEnum
+    nutrition: Optional[Any] = None  # required only when health_goal == "custom"
 
 
 class UserLoginRequest(BaseModel):

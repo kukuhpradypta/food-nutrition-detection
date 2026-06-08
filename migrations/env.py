@@ -12,10 +12,14 @@ from alembic import context
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from api.database import Base
-from api.models import User  # noqa: F401
+from api.config import DATABASE_URL
+from api.models import User, DailyNutrition, UserHealthGoal  # noqa: F401
 
 config = context.config
 fileConfig(config.config_file_name)
+
+# Override sqlalchemy.url with the value from .env (via api.config)
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 target_metadata = Base.metadata
 

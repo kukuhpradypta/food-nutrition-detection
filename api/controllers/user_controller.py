@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
 from api.models.user import User
+from api.models.user_health_goal import UserHealthGoal, GoalCategory
 
 
 def hash_password(password: str) -> str:
@@ -53,6 +54,15 @@ def register_user(db: Session, data: dict) -> User:
     if existing:
         raise HTTPException(status_code=400, detail="Username already taken")
 
+    # If goal is custom, nutrition (JSON) is required
+    if data["health_goal"] == "custom":
+        nutrition = data.get("nutrition")
+        if not nutrition or not isinstance(nutrition, dict):
+            raise HTTPException(
+                status_code=400,
+                detail="Field 'nutrition' (JSON object) is required when health_goal is 'custom'",
+            )
+
     user = User(
         name=data["name"],
         username=data["username"],
@@ -67,6 +77,17 @@ def register_user(db: Session, data: dict) -> User:
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # For custom goal, create a personal health goal entry
+    if data["health_goal"] == "custom":
+        custom_goal = UserHealthGoal(
+            goal_category=GoalCategory.custom.value,
+            nutrition=data["nutrition"],
+            user_id=user.id,
+        )
+        db.add(custom_goal)
+        db.commit()
+
     return user
 
 

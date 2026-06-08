@@ -18,6 +18,7 @@ class HealthGoal(str, enum.Enum):
     lose_weight = "lose_weight"
     gain_muscle = "gain_muscle"
     maintain_health = "maintain_health"
+    custom = "custom"
 
 
 class ActivityLevel(str, enum.Enum):

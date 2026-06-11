@@ -46,3 +46,7 @@ def upgrade():
 
 def downgrade():
     op.drop_table("users")
+    # Drop PostgreSQL ENUM types that were created with this table
+    op.execute("DROP TYPE IF EXISTS gender")
+    op.execute("DROP TYPE IF EXISTS healthgoal")
+    op.execute("DROP TYPE IF EXISTS activitylevel")

@@ -97,6 +97,7 @@ def upgrade():
 
 def downgrade():
     op.drop_table("user_health_goals")
+    op.execute("DROP TYPE IF EXISTS goalcategory")
 
     op.alter_column(
         "users",

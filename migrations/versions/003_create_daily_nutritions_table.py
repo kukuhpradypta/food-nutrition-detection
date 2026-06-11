@@ -38,3 +38,4 @@ def upgrade():
 
 def downgrade():
     op.drop_table("daily_nutritions")
+    op.execute("DROP TYPE IF EXISTS mealcategory")

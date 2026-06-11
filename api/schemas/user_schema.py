@@ -25,7 +25,7 @@ class ActivityLevelEnum(str, Enum):
     light = "light"
     moderate = "moderate"
     active = "active"
-    very_active = "athlete"
+    athlete = "athlete"
 
 
 # ── Base API response wrapper ──────────────────────────────────────────────────

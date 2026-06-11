@@ -26,7 +26,7 @@ class ActivityLevel(str, enum.Enum):
     light = "light"
     moderate = "moderate"
     active = "active"
-    very_active = "athlete"
+    athlete = "athlete"
 
 
 class User(Base):

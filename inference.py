@@ -26,6 +26,12 @@ def predict(image_path, checkpoint_path=CHECKPOINT_PATH):
     model.to(device)
     model.eval()
 
+    target_mean = checkpoint.get("target_mean")
+    target_std = checkpoint.get("target_std")
+    if target_mean is not None:
+        target_mean = target_mean.to(device)
+        target_std = target_std.to(device)
+
     # Load and preprocess image
     transform = get_val_transforms(IMAGE_SIZE)
     image = Image.open(image_path).convert("RGB")
@@ -33,10 +39,15 @@ def predict(image_path, checkpoint_path=CHECKPOINT_PATH):
 
     # Predict
     with torch.no_grad():
-        output = model(input_tensor)
+        output = model(input_tensor)[0]
+
+    # Denormalize and clamp
+    if target_mean is not None:
+        output = output * target_std + target_mean
+    output = torch.clamp(output, min=0.0)
 
     # Parse results
-    calories, fat, carb, protein = output[0].cpu().numpy()
+    calories, fat, carb, protein = output.cpu().numpy()
 
     return {
         "calories": round(float(calories), 1),

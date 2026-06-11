@@ -28,7 +28,8 @@ class FoodNutritionModel(nn.Module):
             nn.ReLU(),
             nn.Dropout(p=0.1),
             nn.Linear(256, num_outputs),
-            nn.ReLU(),  # Nutrition values are always >= 0
+            # No activation: model predicts normalized targets (can be negative).
+            # Values are denormalized and clamped to >= 0 at inference time.
         )
 
     def forward(self, x):

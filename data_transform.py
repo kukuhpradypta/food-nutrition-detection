@@ -37,20 +37,28 @@ def get_val_transforms(image_size=224):
 class FoodNutritionDataset(Dataset):
     """
     Dataset for food nutrition prediction.
-    Returns image tensor and target tensor [calories, fat, carb, protein].
+    Returns image tensor and NORMALIZED target tensor [calories, fat, carb, protein].
+
+    Targets are normalized using (value - mean) / std so that every macro
+    contributes equally to the loss. Pass `target_mean` / `target_std` from the
+    training set when building the validation dataset so both use the same scale.
     """
 
     # Target columns in order
     TARGET_COLS = ["total_calories", "total_fat", "total_carb", "total_protein"]
 
-    def __init__(self, csv_file, image_dir, transform=None):
+    def __init__(self, csv_file, image_dir, transform=None, target_mean=None, target_std=None):
         self.df = pd.read_csv(csv_file)
         self.image_dir = image_dir
         self.transform = transform
 
-        # Pre-compute target statistics for normalization
-        self.target_mean = self.df[self.TARGET_COLS].mean().values
-        self.target_std = self.df[self.TARGET_COLS].std().values
+        # Compute stats from this CSV unless explicitly provided (val should reuse train stats)
+        if target_mean is None or target_std is None:
+            self.target_mean = self.df[self.TARGET_COLS].mean().values.astype("float32")
+            self.target_std = self.df[self.TARGET_COLS].std().values.astype("float32")
+        else:
+            self.target_mean = target_mean
+            self.target_std = target_std
 
     def __len__(self):
         return len(self.df)
@@ -65,11 +73,16 @@ class FoodNutritionDataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        # Target: [calories, fat, carb, protein]
-        targets = torch.tensor(
+        # Raw target: [calories, fat, carb, protein]
+        raw = torch.tensor(
             [row[col] for col in self.TARGET_COLS],
             dtype=torch.float32
         )
+
+        # Normalize
+        mean = torch.tensor(self.target_mean, dtype=torch.float32)
+        std = torch.tensor(self.target_std, dtype=torch.float32)
+        targets = (raw - mean) / std
 
         return image, targets
 

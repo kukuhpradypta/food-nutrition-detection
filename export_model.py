@@ -9,6 +9,7 @@ Usage:
 """
 import os
 import torch
+import torch.nn as nn
 import torch.onnx
 from model import create_model
 
@@ -17,15 +18,50 @@ EXPORT_DIR = "exported_models"
 IMAGE_SIZE = 224
 
 
-def export_onnx():
-    """Export model to ONNX format."""
-    os.makedirs(EXPORT_DIR, exist_ok=True)
+class DenormalizedModel(nn.Module):
+    """
+    Wraps the trained model so its output is denormalized back to real units
+    (calories, fat_g, carb_g, protein_g) and clamped to >= 0.
+    This makes the exported ONNX/TorchScript model directly usable on mobile
+    without needing the mean/std on the client side.
+    """
 
-    # Load model
+    def __init__(self, base_model, target_mean, target_std):
+        super().__init__()
+        self.base_model = base_model
+        self.register_buffer("target_mean", target_mean)
+        self.register_buffer("target_std", target_std)
+
+    def forward(self, x):
+        out = self.base_model(x)
+        out = out * self.target_std + self.target_mean
+        return torch.clamp(out, min=0.0)
+
+
+def _load_wrapped_model():
+    """Load checkpoint and wrap with denormalization."""
     model = create_model(pretrained=False)
     checkpoint = torch.load(CHECKPOINT_PATH, map_location="cpu", weights_only=True)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
+
+    mean = checkpoint.get("target_mean")
+    std = checkpoint.get("target_std")
+    if mean is None or std is None:
+        # Fallback: identity (no normalization)
+        mean = torch.zeros(4)
+        std = torch.ones(4)
+
+    wrapped = DenormalizedModel(model, mean.float(), std.float())
+    wrapped.eval()
+    return wrapped
+
+
+def export_onnx():
+    """Export model to ONNX format."""
+    os.makedirs(EXPORT_DIR, exist_ok=True)
+
+    model = _load_wrapped_model()
 
     # Dummy input
     dummy_input = torch.randn(1, 3, IMAGE_SIZE, IMAGE_SIZE)
@@ -54,11 +90,7 @@ def export_torchscript():
     """Export model to TorchScript for PyTorch Mobile."""
     os.makedirs(EXPORT_DIR, exist_ok=True)
 
-    # Load model
-    model = create_model(pretrained=False)
-    checkpoint = torch.load(CHECKPOINT_PATH, map_location="cpu", weights_only=True)
-    model.load_state_dict(checkpoint["model_state_dict"])
-    model.eval()
+    model = _load_wrapped_model()
 
     # Trace model
     dummy_input = torch.randn(1, 3, IMAGE_SIZE, IMAGE_SIZE)

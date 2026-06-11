@@ -53,13 +53,19 @@ def train_one_epoch(model, dataloader, criterion, optimizer, device):
     return total_loss / num_batches
 
 
-def validate(model, dataloader, criterion, device):
-    """Validate model, return average loss and per-target MAE."""
+def validate(model, dataloader, criterion, device, target_mean=None, target_std=None):
+    """Validate model. Returns avg loss and per-target MAE in ORIGINAL units."""
     model.eval()
     total_loss = 0.0
     total_mae = torch.zeros(4)
     num_batches = 0
     num_samples = 0
+
+    # For denormalizing MAE back to real units (kcal, grams)
+    if target_mean is not None and target_std is not None:
+        std_cpu = target_std.cpu()
+    else:
+        std_cpu = torch.ones(4)
 
     with torch.no_grad():
         for images, targets in dataloader:
@@ -70,9 +76,9 @@ def validate(model, dataloader, criterion, device):
             loss = criterion(predictions, targets)
 
             total_loss += loss.item()
-            # MAE per target
+            # MAE per target in normalized space, then scale back by std
             mae = torch.abs(predictions - targets).sum(dim=0).cpu()
-            total_mae += mae
+            total_mae += mae * std_cpu
             num_batches += 1
             num_samples += images.size(0)
 
@@ -95,9 +101,15 @@ def main():
     train_dataset = FoodNutritionDataset(
         cfg["train_csv"], cfg["image_dir"], transform=train_transform
     )
+    # Val must reuse the TRAIN set's normalization stats
+    train_mean, train_std = train_dataset.get_target_stats()
     val_dataset = FoodNutritionDataset(
-        cfg["val_csv"], cfg["image_dir"], transform=val_transform
+        cfg["val_csv"], cfg["image_dir"], transform=val_transform,
+        target_mean=train_mean.numpy(), target_std=train_std.numpy(),
     )
+
+    train_mean = train_mean.to(device)
+    train_std = train_std.to(device)
 
     train_loader = DataLoader(
         train_dataset, batch_size=cfg["batch_size"],
@@ -154,7 +166,7 @@ def main():
         train_loss = train_one_epoch(model, train_loader, criterion, optimizer, device)
 
         # Validate
-        val_loss, val_mae = validate(model, val_loader, criterion, device)
+        val_loss, val_mae = validate(model, val_loader, criterion, device, train_mean, train_std)
 
         scheduler.step()
 
@@ -179,18 +191,13 @@ def main():
                 "optimizer_state_dict": optimizer.state_dict(),
                 "val_loss": val_loss,
                 "val_mae": val_mae,
+                "target_mean": train_mean.cpu(),
+                "target_std": train_std.cpu(),
             }, save_path)
             print(f"  >> Saved best model (val_loss={val_loss:.4f})")
 
-    # Save final model
-    final_path = os.path.join(cfg["output_dir"], "final_model.pth")
-    torch.save({
-        "epoch": cfg["num_epochs"],
-        "model_state_dict": model.state_dict(),
-        "val_loss": val_loss,
-    }, final_path)
     print(f"\nTraining complete! Best val loss: {best_val_loss:.4f}")
-    print(f"Models saved to: {cfg['output_dir']}/")
+    print(f"Best model saved to: {cfg['output_dir']}/best_model.pth")
 
 
 if __name__ == "__main__":
